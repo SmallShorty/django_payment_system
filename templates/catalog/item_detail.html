@@ -1,21 +1,23 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}
-    Купить {{ item.name }}
-{% endblock %}
-
-{% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/product.css' %}">
-{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% load static %} {% block title %} Купить {{
+item.name }} {% endblock %} {% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/catalog/style.css' %}" />
+{% endblock %} {% block content %}
 <div class="product-card">
-    <h1>{{ item.name }}</h1>
-    <p>{{ item.description }}</p>
-    <div class="purchase-row">
-        <span class="price">{{ item.price }} {{ item.currency }}</span>
-        <button id="buy-button">Buy</button>
+  <div class="product-layout">
+    <div class="product-image">
+      <div class="image-placeholder">
+        <span>Изображение товара</span>
+      </div>
     </div>
+
+    <div class="product-info">
+      <h1>{{ item.name }}</h1>
+      <div class="purchase-row">
+        <span class="price">{{ item.price }} {{ item.currency }}</span>
+        <button id="buy-button">Купить</button>
+      </div>
+      <p class="description">{{ item.description }}</p>
+    </div>
+  </div>
 </div>
 {% endblock %}
