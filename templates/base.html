@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Магазин{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <main class="body-container">{% block content %} {% endblock %}</main>
+
+    <footer>
+      <div class="footer-content">
+        <span> 2026. Проект выполнен в рамках тестового задания.&nbsp;</span>
+        <a
+          href="https://github.com/SmallShorty/django_payment_system"
+          target="_blank"
+          class="github-link"
+        >
+          Исходный код на GitHub
+        </a>
+      </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
