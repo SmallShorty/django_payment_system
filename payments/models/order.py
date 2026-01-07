@@ -2,6 +2,8 @@ from django.db import models
 
 class Order(models.Model):
     session_key = models.CharField(max_length=40, db_index=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
     items = models.ManyToManyField('catalog.Item', through='OrderItem')
     
     taxes = models.ManyToManyField('Tax', blank=True)
