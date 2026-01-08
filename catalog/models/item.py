@@ -5,8 +5,9 @@ from config.constants import Currency
 class Item(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название")
     description = models.TextField(verbose_name="Описание")
-    price = models.PositiveIntegerField(
-        verbose_name="Цена",
+    price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
     )
     currency = models.CharField(
         max_length=3,
