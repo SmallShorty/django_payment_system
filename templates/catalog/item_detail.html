@@ -14,7 +14,10 @@ item.name }} {% endblock %} {% block extra_head %}
       <h1>{{ item.name }}</h1>
       <div class="purchase-row">
         <span class="price">{{ item.price }} {{ item.currency }}</span>
-        <button id="buy-button">Купить</button>
+        <form action="{% url 'add_to_cart' item.id %}" method="post">
+          {% csrf_token %}
+          <button type="submit" id="buy-button">Купить</button>
+        </form>
       </div>
       <p class="description">{{ item.description }}</p>
     </div>
