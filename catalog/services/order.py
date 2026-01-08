@@ -1,4 +1,4 @@
-from payments.models.order import Order, OrderItem
+from catalog.models.order import Order, OrderItem
 from catalog.models import Item
 
 class OrderService:

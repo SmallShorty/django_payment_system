@@ -1,5 +1,5 @@
 from decimal import ROUND_HALF_UP, Decimal
-from payments.models.order import OrderItem
+from catalog.models.order import OrderItem
 from payments.models.tax import Tax
 from payments.models.discount import Discount
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from payments.models.order import Order, OrderItem
+from catalog.models.order import Order, OrderItem
 from payments.models.tax import Tax
 from payments.models.discount import Discount
 
