@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/catalog/shop.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="shop-wrapper">
+    <div class="cart-widget">
+        <a href="{% url 'cart_detail' %}" class="cart-link">
+            🛒 
+            {% if cart_total_quantity > 0 %}
+                <span class="cart-count-badge">{{ cart_total_quantity }}</span>
+            {% endif %}
+        </a>
+    </div>
+
+    <div class="shop-main-area">
+        {% block shop_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

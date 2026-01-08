@@ -59,3 +59,6 @@ class OrderService:
         if "order_id" in self.session:
             del self.session["order_id"]
             self.session.modified = True
+            
+    def get_items_count(self):
+        return OrderItem.objects.filter(order=self.order).count()

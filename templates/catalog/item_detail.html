@@ -1,7 +1,13 @@
-{% extends "base.html" %} {% load static %} {% block title %} Купить {{
-item.name }} {% endblock %} {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/catalog/style.css' %}" />
-{% endblock %} {% block content %}
+{% extends "catalog/shop.html" %}
+{% load static %}
+
+{% block title %} Купить {{ item.name }} {% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/catalog/item_detail.css' %}" />
+{% endblock %}
+
+{% block shop_content %}
 <div class="product-card">
   <div class="product-layout">
     <div class="product-image">

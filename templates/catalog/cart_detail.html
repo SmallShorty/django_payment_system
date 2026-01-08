@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оформление заказа{%endblock %}
+
+{% block extra_head %} {% endblock %}
+
+{% block content %}
+<div class="cart-page-container">
+  <section class="cart-items-list">
+    <h1>Ваша корзина</h1>
+
+    {% if order.orderitem_set.exists %} {% for oi in order.orderitem_set.all %}
+    <div class="cart-item" id="item-row-{{ oi.item.id }}">
+      <div class="item-info">
+        <h3 style="margin: 0">{{ oi.item.name }}</h3>
+        <p style="color: #666">
+          {{ oi.price_at_purchase }} {{ oi.item.currency }}
+        </p>
+      </div>
+
+      <div class="quantity-control">
+        <button
+          class="btn-qty ajax-btn"
+          data-item-id="{{ oi.item.id }}"
+          data-action="reduce"
+        >
+          −
+        </button>
+        <span class="qty-num" id="qty-val-{{ oi.item.id }}"
+          >{{ oi.quantity }}</span
+        >
+        <button
+          class="btn-qty ajax-btn"
+          data-item-id="{{ oi.item.id }}"
+          data-action="add"
+        >
+          +
+        </button>
+      </div>
+
+      <div class="item-total">
+        <button
+          class="ajax-btn"
+          data-item-id="{{ oi.item.id }}"
+          data-action="remove"
+          style="
+            color: #dc3545;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+          "
+        >
+          Удалить
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div style="margin-top: 30px">
+      <a
+        href="{% url 'cart_clear' %}"
+        style="color: #6c757d; text-decoration: underline"
+        >Очистить корзину</a
+      >
+    </div>
+
+    {% else %}
+    <div style="padding: 40px 0">
+      <p>В корзине пока ничего нет.</p>
+      <a href="/">Перейти к покупкам</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="cart-checkout-sidebar">
+    <h3>Детали заказа</h3>
+
+    <form action="#" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="btn-buy">Оплатить заказ</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.ajax-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const itemId = this.dataset.itemId;
+        const action = this.dataset.action;
+        const url = `/cart/update/${itemId}/${action}/`; 
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const itemRow = document.getElementById(`item-row-${itemId}`);
+                if (data.item_qty === 0 || action === 'remove') {
+                    if (itemRow) {
+                        itemRow.style.opacity = '0';
+                        setTimeout(() => {
+                            itemRow.remove();
+                            if (data.total_qty === 0) location.reload();
+                        }, 300);
+                    }
+                } else {
+                    const qtySpan = document.getElementById(`qty-val-${itemId}`);
+                    if (qtySpan) qtySpan.innerText = data.item_qty;
+                }
+                const badge = document.querySelector('.cart-count-badge');
+                if (badge) badge.innerText = data.total_qty;
+
+                const totalDisplay = document.getElementById('total-price-display');
+                if (totalDisplay) totalDisplay.innerText = data.total_cost;
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+</script>
+{% endblock %}
