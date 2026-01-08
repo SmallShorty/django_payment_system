@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from catalog.models.item import Item
 from catalog.services.order import OrderService
+from payments.services.pricing import PricingService
 
 
 def item_detail(request, pk):
@@ -40,12 +41,17 @@ def cart_update(request, item_id, action):
             order_service.update_quantity(item_id, oi.quantity - 1)
 
     order_item = order.orderitem_set.filter(item_id=item_id).first()
+    
+    pricing_service = PricingService(order)
+    pricing_data = pricing_service.get_total_price()
+    
+
     return JsonResponse(
         {
             "success": True,
             "item_qty": order_item.quantity if order_item else 0,
-            "total_qty": order_service.get_total_quantity(),
-            "total_cost": order.get_total_cost(),
+            "total_qty": order_service.get_items_count(),
+            "total_cost": str(pricing_data["total"]),
         }
     )
 

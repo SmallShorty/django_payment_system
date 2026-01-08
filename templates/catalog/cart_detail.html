@@ -91,7 +91,7 @@ document.querySelectorAll('.ajax-btn').forEach(button => {
         
         const itemId = this.dataset.itemId;
         const action = this.dataset.action;
-        const url = `/cart/update/${itemId}/${action}/`; 
+        const url = `/catalog/cart/update/${itemId}/${action}/`;
 
         fetch(url, {
             method: 'POST',
