@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 import stripe
 
 from catalog.models.order import Order
+from catalog.services.order import OrderService
 from payments.services.pricing import PricingService
 from payments.services.stripe import create_stripe_payment_intent
 
@@ -53,3 +54,32 @@ def payment_complete(request):
     }
     
     return render(request, 'payments/payment_complete.html', context)
+
+@csrf_exempt
+def confirm_payment_status(request):
+    payment_intent_id = request.GET.get('payment_intent')
+    
+    if not payment_intent_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing ID'}, status=400)
+
+    try:
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        
+        if intent.status == 'succeeded':
+            order_id = intent.metadata.get('order_id')
+
+            service = OrderService(request)
+            if service.order.id == int(order_id):
+                service.mark_as_paid()
+                return JsonResponse({'status': 'success'})
+            else:
+                from catalog.models.order import Order
+                order = Order.objects.get(id=order_id)
+                order.is_paid = True
+                order.save()
+                return JsonResponse({'status': 'success', 'note': 'session_mismatch_fixed'})
+
+        return JsonResponse({'status': 'error', 'message': 'Payment not succeeded'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

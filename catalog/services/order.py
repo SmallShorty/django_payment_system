@@ -62,3 +62,13 @@ class OrderService:
             
     def get_items_count(self):
         return OrderItem.objects.filter(order=self.order).count()
+    
+    def mark_as_paid(self):
+        if not self.order.is_paid:
+            self.order.is_paid = True
+            
+            self.order.save()
+            
+            self.clear_order()
+            return True
+        return False

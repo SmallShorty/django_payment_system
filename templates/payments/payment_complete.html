@@ -43,18 +43,27 @@
     async function verifyStripe() {
         const stripe = Stripe('{{ stripe_public_key }}');
         const clientSecret = urlParams.get('payment_intent_client_secret');
+        const paymentIntentId = urlParams.get('payment_intent');
 
-        if (!clientSecret) {
+        if (!clientSecret || !paymentIntentId) {
             updateUI("error", "Данные Stripe не найдены.");
             return;
         }
 
         const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+        
         if (paymentIntent.status === "succeeded") {
-            updateUI("success", "Оплата через Stripe прошла успешно!");
-            startRedirectTimer();
+            const response = await fetch(`/pricing/confirm-status/?payment_intent=${paymentIntentId}`);
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                updateUI("success", "Оплата подтверждена сервером. Спасибо!");
+                startRedirectTimer();
+            } else {
+                updateUI("error", "Сервер не смог подтвердить оплату.");
+            }
         } else {
-            updateUI("error", "Платеж Stripe не подтвержден: " + paymentIntent.status);
+            updateUI("error", "Платеж не удался: " + paymentIntent.status);
         }
     }
 

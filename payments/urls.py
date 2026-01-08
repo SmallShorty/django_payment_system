@@ -11,4 +11,5 @@ urlpatterns = [
         name="create_payment_intent",
     ),
     path('payment-complete/', views.payment_complete, name='payment_complete'),
+    path('confirm-status/', views.confirm_payment_status, name='confirm_status'),
 ]
