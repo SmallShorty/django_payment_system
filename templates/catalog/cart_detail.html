@@ -74,14 +74,12 @@
     {% endif %}
   </section>
 
-  <aside class="cart-checkout-sidebar">
+<aside class="cart-checkout-sidebar">
     <h3>Детали заказа</h3>
-
-    <form action="#" method="POST">
-      {% csrf_token %}
-      <button type="submit" class="btn-buy">Оплатить заказ</button>
-    </form>
-  </aside>
+    <a href="{% url 'checkout' order.id %}?currency=rub" class="btn-buy">
+        Оплатить заказ
+    </a>
+</aside>
 </div>
 {% endblock %}
 

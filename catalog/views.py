@@ -54,3 +54,11 @@ def cart_clear(request):
     order_service = OrderService(request)
     order_service.clear_order()
     return redirect("cart_detail")
+
+
+def shop_view(request):
+    # Получаем все товары из базы данных
+    items = Item.objects.all()
+    
+    # Рендерим шаблон shop.html и передаем туда товары
+    return render(request, 'catalog/shop.html', {'items': items})

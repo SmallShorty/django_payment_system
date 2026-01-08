@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="text-align: center; padding: 50px;">
+    <div id="status-icon" style="font-size: 64px; margin-bottom: 20px;">⏳</div>
+    <h1 id="status-message">Инициализация проверки...</h1>
+    <p id="sub-message">Пожалуйста, подождите.</p>
+    
+    <div style="margin-top: 30px;">
+        <p id="timer-container" style="display: none;">
+            Вы будете перенаправлены в магазин через <span id="timer">5</span> сек.
+        </p>
+        <a href="{% url 'catalog_shop' %}" class="btn-pay" style="display: none;" id="back-btn">
+            Вернуться в магазин
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const provider = urlParams.get('provider');
+
+    async function checkPaymentStatus() {
+        switch (provider) {
+            case 'stripe':
+                await verifyStripe();
+                break;
+            
+            case 'custom_pay':
+                await verifyCustomPay();
+                break;
+
+            default:
+                updateUI("error", "Неизвестный источник платежа.");
+                break;
+        }
+    }
+
+    async function verifyStripe() {
+        const stripe = Stripe('{{ stripe_public_key }}');
+        const clientSecret = urlParams.get('payment_intent_client_secret');
+
+        if (!clientSecret) {
+            updateUI("error", "Данные Stripe не найдены.");
+            return;
+        }
+
+        const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+        if (paymentIntent.status === "succeeded") {
+            updateUI("success", "Оплата через Stripe прошла успешно!");
+            startRedirectTimer();
+        } else {
+            updateUI("error", "Платеж Stripe не подтвержден: " + paymentIntent.status);
+        }
+    }
+
+    // логика другого клиента
+    async function verifyCustomPay() {
+        const payload = urlParams.get('payload');
+        if (payload === 'ok') {
+            updateUI("success", "Ваш кастомный платеж принят!");
+            startRedirectTimer();
+        } else {
+            updateUI("error", "Ошибка стороннего платежа.");
+        }
+    }
+
+    function updateUI(type, message) {
+        const icon = document.getElementById("status-icon");
+        const msg = document.getElementById("status-message");
+        const backBtn = document.getElementById("back-btn");
+
+        msg.textContent = message;
+        backBtn.style.display = "inline-block";
+
+        if (type === "success") {
+            icon.textContent = "✅";
+            icon.style.color = "#28a745";
+            document.getElementById("timer-container").style.display = "block";
+        } else if (type === "error") {
+            icon.textContent = "❌";
+            icon.style.color = "#dc3545";
+        }
+    }
+
+    function startRedirectTimer() {
+        let timeLeft = 5;
+        const timerEl = document.getElementById("timer");
+        setInterval(() => {
+            timeLeft -= 1;
+            timerEl.textContent = timeLeft;
+            if (timeLeft <= 0) window.location.href = "{% url 'catalog_shop' %}";
+        }, 1000);
+    }
+
+    checkPaymentStatus();
+</script>
+{% endblock %}
