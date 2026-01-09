@@ -7,14 +7,14 @@
 
 {% block content %}
 <div class="shop-wrapper">
+    {% if cart_total_quantity > 0 %}
     <div class="cart-widget">
         <a href="{% url 'cart_detail' %}" class="cart-link">
-            🛒 
-            {% if cart_total_quantity > 0 %}
-                <span class="cart-count-badge">{{ cart_total_quantity }}</span>
-            {% endif %}
+            <span class="cart-icon">🛒</span>
+            <span class="cart-count-badge">{{ cart_total_quantity }}</span>
         </a>
     </div>
+    {% endif %}
 
     <div class="shop-main-area">
         {% block shop_content %}{% endblock %}

@@ -1,9 +1,18 @@
 .cart-widget {
   position: fixed;
   top: 20px;
-  right: 30px;
+  right: 20px;
   z-index: 1000;
-  border: 2px solid red;
+  display: block;
+}
+.cart-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 2rem;
+  transition: transform 0.2s;
 }
 
 .cart-link:hover {
@@ -12,15 +21,28 @@
 
 .cart-count-badge {
   position: absolute;
-  top: -5px;
-  right: -10px;
+  top: -2px;
+  right: -8px;
   background-color: #e74c3c;
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: bold;
-  padding: 2px 7px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 20px;
+  height: 20px;
+  padding: 2px;
   border-radius: 50%;
+  aspect-ratio: 1 / 1;
+
   border: 2px solid white;
-  min-width: 15px;
-  text-align: center;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.cart-count-badge:empty {
+  display: none;
 }
