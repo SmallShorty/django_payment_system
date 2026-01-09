@@ -32,43 +32,18 @@ class OrderService:
 
     def add_item(self, item_id, quantity=1):
         item = Item.objects.get(id=item_id)
-        order_item, created = OrderItem.objects.get_or_create(
-            order=self.order,
-            item=item,
-            defaults={"price_at_purchase": item.price},
-        )
-        if not created:
-            order_item.quantity += int(quantity)
-            order_item.save()
-        return order_item
+        return self.order.add_or_update_item(item, quantity)
 
-    def update_quantity(self, item_id, quantity):
-        quantity = int(quantity)
-        if quantity <= 0:
-            OrderItem.objects.filter(order=self.order, item_id=item_id).delete()
-            return
-
-        order_item = OrderItem.objects.filter(order=self.order, item_id=item_id).first()
-        if order_item:
-            order_item.quantity = quantity
-            order_item.save()
-        else:
-            self.add_item(item_id, quantity=quantity)
-
-    def clear_order(self):
-        if "order_id" in self.session:
-            del self.session["order_id"]
-            self.session.modified = True
-            
-    def get_items_count(self):
-        return OrderItem.objects.filter(order=self.order).count()
-    
     def mark_as_paid(self):
         if not self.order.is_paid:
-            self.order.is_paid = True
-            
-            self.order.save()
-            
+            self.order.set_paid()
             self.clear_order()
             return True
         return False
+
+    def clear_order(self):
+        self.session.pop("order_id", None)
+        self.session.modified = True
+    
+    def get_items_count(self):
+        return self.order.total_items
