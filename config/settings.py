@@ -106,6 +106,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# CACHE
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'cache-system',
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
