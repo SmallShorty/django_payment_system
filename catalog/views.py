@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from catalog.models.item import Item
+from catalog.models.order import Order
 from catalog.services.order import OrderService
 from payments.services.pricing import PricingService
 
@@ -65,3 +66,21 @@ def cart_clear(request):
 def shop_view(request):
     items = Item.objects.all()
     return render(request, 'catalog/product_list.html', {'items': items})
+
+def get_cart_total(request, order_id, currency):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        target_currency = currency.upper()
+        order = get_object_or_404(Order, id=order_id)
+        
+        service = PricingService(order)
+        pricing_data = service.get_total_price(target_currency=target_currency) 
+        
+        final_total = pricing_data.get('total', 0)
+        
+        return JsonResponse({
+            'success': True,
+            'total_cost': f"{final_total:.2f}",
+            'currency': target_currency
+        })
+    
+    return JsonResponse({'success': False}, status=400)

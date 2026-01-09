@@ -33,14 +33,15 @@ def payment_intent_view(request, order_id):
  
 def checkout(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    currency = request.GET.get('currency', 'rub').lower()
+    currency = request.GET.get('currency', 'rub').upper()
     
-    pricing = PricingService(order)
-    prices = pricing.get_total_price()
+    service = PricingService(order)
+    pricing_data = service.get_total_price(target_currency=currency)
+    total_to_pay = pricing_data.get('total')
 
     return render(request, 'payments/stripe/checkout.html', {
         'order': order,
-        'total_price': prices.get("discounted", prices.get("total")),
+        'total_price': total_to_pay,
         'currency': currency,
         'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY
     })

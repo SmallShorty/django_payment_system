@@ -111,7 +111,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currencySelect.addEventListener('change', function() {
-        updateCheckoutUrl(this.value);
+        const selectedCurrency = this.value.toUpperCase();
+
+        const orderId = "{{ order.id }}";
+
+        fetch(`/catalog/get_total/${orderId}/${selectedCurrency}/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const totalDisplay = document.getElementById('total-price-display');
+                if (totalDisplay) {
+                    totalDisplay.innerText = data.total_cost;
+                }
+                updateCheckoutUrl(selectedCurrency.toLowerCase());
+            } else {
+                console.error("Ошибка при пересчете:", data.message);
+            }
+        })
+        .catch(err => console.error("Ошибка сети:", err));
     });
 
     itemsSection.addEventListener('click', function(e) {
