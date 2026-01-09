@@ -10,28 +10,37 @@ class PricingService:
         self.order = order
 
     @classmethod
-    def convert(cls, amount: float, from_currency: str, to_currency: str) -> float:
+    def convert(cls, amount: Decimal, from_currency: str, to_currency: str) -> Decimal:
+        from_currency = from_currency.upper()
+        to_currency = to_currency.upper()
+        
         if from_currency == to_currency:
-            return amount
+            return Decimal(str(amount))
 
+        rates = cls.get_rates_batch(from_currency, [to_currency])
+        if to_currency not in rates:
+            raise ValueError(f"Курс для {to_currency} не найден.")
+            
+        return (Decimal(str(amount)) * rates[to_currency]).quantize(Decimal("0.000001"))
+    
+    @classmethod
+    def get_rates_batch(cls, base_currency: str, target_currencies: list) -> dict:
+        base_currency = base_currency.upper()
+        targets = {c.upper() for c in target_currencies if c.upper() != base_currency}
+        if not targets:
+                return {}
         params = {
-            "amount": amount,
-            "from": from_currency.upper(),
-            "to": to_currency.upper()
+            "from": base_currency,
+            "to": ",".join(targets)
         }
-
         try:
-            response = requests.get(cls.API_URL, params=params)
+            response = requests.get(cls.API_URL, params=params, timeout=5)
             response.raise_for_status()
             data = response.json()
-            
-            return data['rates'][to_currency.upper()]
-        
+            return {curr: Decimal(str(rate)) for curr, rate in data.get('rates', {}).items()}
         except requests.RequestException as e:
-            raise ValueError(f"Ошибка при запросе к API: {e}")
-        except KeyError:
-            raise ValueError(f"Валюта {to_currency} не найдена.")
-
+            raise ValueError(f"API convertion error: {e}")
+        
     def set_discount(self, code):
         discount = Discount.objects.filter(code=code).first()
         if discount:
@@ -44,9 +53,26 @@ class PricingService:
         taxes = Tax.objects.filter(id__in=tax_ids_list)
         self.order.taxes.set(taxes)
 
-    def get_total_price(self):
-        items = OrderItem.objects.filter(order=self.order)
-        subtotal = sum((oi.price_at_purchase * oi.quantity for oi in items), Decimal("0.00"))
+    def get_total_price(self, target_currency="RUB"):
+        target_currency = target_currency.upper()
+        order_items = OrderItem.objects.filter(order=self.order).select_related('item')
+        
+        item_currencies = {oi.item.currency for oi in order_items}
+        rates = self.get_rates_batch(target_currency, list(item_currencies))
+        
+        subtotal = Decimal("0.00")
+        
+        for oi in order_items:
+            item_curr = oi.item.currency.upper()
+            price = Decimal(str(oi.item.price))
+            
+            if item_curr == target_currency:
+                item_price_in_order_curr = price
+            else:
+                rate = rates.get(item_curr)
+                item_price_in_order_curr = price / rate
+                    
+            subtotal += item_price_in_order_curr * oi.quantity
 
         discount_value = Decimal("0.00")
         discount = self.order.discount
@@ -55,7 +81,11 @@ class PricingService:
             if discount.percent_off:
                 discount_value = (subtotal * discount.percent_off) / Decimal("100")
             elif discount.amount_off:
-                discount_value = discount.amount_off
+                discount_value = self.convert(
+                    amount=discount.amount_off,
+                    from_currency=discount.currency,
+                    to_currency=self.order.currency
+                )
         
         discounted_subtotal = max(subtotal - discount_value, Decimal("0.00"))
 
