@@ -1,4 +1,6 @@
 from decimal import ROUND_HALF_UP, Decimal
+
+import requests
 from catalog.models.order import OrderItem
 from payments.models.tax import Tax
 from payments.models.discount import Discount
@@ -6,6 +8,29 @@ from payments.models.discount import Discount
 class PricingService:
     def __init__(self, order):
         self.order = order
+
+    @classmethod
+    def convert(cls, amount: float, from_currency: str, to_currency: str) -> float:
+        if from_currency == to_currency:
+            return amount
+
+        params = {
+            "amount": amount,
+            "from": from_currency.upper(),
+            "to": to_currency.upper()
+        }
+
+        try:
+            response = requests.get(cls.API_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            return data['rates'][to_currency.upper()]
+        
+        except requests.RequestException as e:
+            raise ValueError(f"Ошибка при запросе к API: {e}")
+        except KeyError:
+            raise ValueError(f"Валюта {to_currency} не найдена.")
 
     def set_discount(self, code):
         discount = Discount.objects.filter(code=code).first()
