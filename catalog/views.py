@@ -63,8 +63,5 @@ def cart_clear(request):
 
 
 def shop_view(request):
-    # Получаем все товары из базы данных
     items = Item.objects.all()
-    
-    # Рендерим шаблон shop.html и передаем туда товары
-    return render(request, 'catalog/shop.html', {'items': items})
+    return render(request, 'catalog/product_list.html', {'items': items})
