@@ -1,129 +1,134 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Оформление заказа{%endblock %}
-
-{% block extra_head %} {% endblock %}
+{% block title %}Оформление заказа{% endblock %}
 
 {% block content %}
 <div class="cart-page-container">
-  <section class="cart-items-list">
+  <section class="cart-items-list" id="cart-items-section">
     <h1>Ваша корзина</h1>
 
-    {% if order.orderitem_set.exists %} {% for oi in order.orderitem_set.all %}
-    <div class="cart-item" id="item-row-{{ oi.item.id }}">
-      <div class="item-info">
-        <h3 style="margin: 0">{{ oi.item.name }}</h3>
-        <p style="color: #666">
-          {{ oi.price_at_purchase }} {{ oi.item.currency }}
-        </p>
-      </div>
+    {% if order.orderitem_set.exists %} 
+    <div id="items-wrapper">
+        {% for oi in order.orderitem_set.all %}
+        <div class="cart-item" id="item-row-{{ oi.item.id }}" style="transition: opacity 0.3s ease;">
+          <div class="item-info">
+            <h3 style="margin: 0">{{ oi.item.name }}</h3>
+            <p style="color: #666">
+              {{ oi.price_at_purchase }} {{ oi.item.currency }}
+            </p>
+          </div>
 
-      <div class="quantity-control">
-        <button
-          class="btn-qty ajax-btn"
-          data-item-id="{{ oi.item.id }}"
-          data-action="reduce"
-        >
-          −
-        </button>
-        <span class="qty-num" id="qty-val-{{ oi.item.id }}"
-          >{{ oi.quantity }}</span
-        >
-        <button
-          class="btn-qty ajax-btn"
-          data-item-id="{{ oi.item.id }}"
-          data-action="add"
-        >
-          +
-        </button>
-      </div>
+          <div class="quantity-control">
+            <button class="btn-qty ajax-btn" data-item-id="{{ oi.item.id }}" data-action="reduce">−</button>
+            <span class="qty-num" id="qty-val-{{ oi.item.id }}">{{ oi.quantity }}</span>
+            <button class="btn-qty ajax-btn" data-item-id="{{ oi.item.id }}" data-action="add">+</button>
+          </div>
 
-      <div class="item-total">
-        <button
-          class="ajax-btn"
-          data-item-id="{{ oi.item.id }}"
-          data-action="remove"
-          style="
-            color: #dc3545;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 0.8rem;
-          "
-        >
-          Удалить
-        </button>
-      </div>
+          <div class="item-total">
+            <button class="ajax-btn" data-item-id="{{ oi.item.id }}" data-action="remove" style="color: #dc3545; background: none; border: none; cursor: pointer; font-size: 0.8rem;">
+              Удалить
+            </button>
+          </div>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 
-    <div style="margin-top: 30px">
-      <a
-        href="{% url 'cart_clear' %}"
-        style="color: #6c757d; text-decoration: underline"
-        >Очистить корзину</a
-      >
+    <div id="cart-tools" style="margin-top: 30px">
+      <a href="{% url 'cart_clear' %}" id="clear-cart-link" style="color: #6c757d; text-decoration: underline">Очистить корзину</a>
     </div>
 
     {% else %}
-    <div style="padding: 40px 0">
+    <div id="empty-cart-message" style="padding: 40px 0">
       <p>В корзине пока ничего нет.</p>
-      <a href="/">Перейти к покупкам</a>
+      <a href="{% url 'catalog_shop' %}" id="back-btn" style="display: inline-block;">Вернуться в магазин</a>
     </div>
     {% endif %}
   </section>
 
-<aside class="cart-checkout-sidebar">
+  <aside class="cart-checkout-sidebar" {% if not order.orderitem_set.exists %}style="display: none;"{% endif %}>
     <h3>Детали заказа</h3>
-    <a href="{% url 'checkout' order.id %}?currency=rub" class="btn-buy">
-        Оплатить заказ
-    </a>
-</aside>
+    <p>Итого: <span id="total-price-display">{{ total_cost|default:"0" }}</span></p>
+    <a href="{% url 'checkout' order.id %}?currency=rub" class="btn-buy" id="checkout-button">Оплатить заказ</a>
+  </aside>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.querySelectorAll('.ajax-btn').forEach(button => {
-    button.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        const itemId = this.dataset.itemId;
-        const action = this.dataset.action;
-        const url = `/catalog/cart/update/${itemId}/${action}/`;
+document.addEventListener('DOMContentLoaded', function() {
+    const itemsSection = document.getElementById('cart-items-section');
+    const sidebar = document.querySelector('.cart-checkout-sidebar');
 
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const itemRow = document.getElementById(`item-row-${itemId}`);
-                if (data.item_qty === 0 || action === 'remove') {
-                    if (itemRow) {
-                        itemRow.style.opacity = '0';
-                        setTimeout(() => {
-                            itemRow.remove();
-                            if (data.total_qty === 0) location.reload();
-                        }, 300);
-                    }
-                } else {
-                    const qtySpan = document.getElementById(`qty-val-${itemId}`);
-                    if (qtySpan) qtySpan.innerText = data.item_qty;
+    function showEmptyMessage() {
+        itemsSection.innerHTML = `
+            <h1>Ваша корзина</h1>
+            <div id="empty-cart-message" style="padding: 40px 0">
+                <p>В корзине пока ничего нет.</p>
+                <a href="{% url 'catalog_shop' %}" id="back-btn" style="display: inline-block;">Вернуться в магазин</a>
+            </div>`;
+        if (sidebar) sidebar.style.display = 'none';
+    }
+
+    itemsSection.addEventListener('click', function(e) {
+        const btn = e.target.closest('.ajax-btn');
+        const clearLink = e.target.closest('#clear-cart-link');
+
+        if (btn) {
+            e.preventDefault();
+            const itemId = btn.dataset.itemId;
+            const action = btn.dataset.action;
+
+            fetch(`/catalog/cart/update/${itemId}/${action}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-                const badge = document.querySelector('.cart-count-badge');
-                if (badge) badge.innerText = data.total_qty;
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const itemRow = document.getElementById(`item-row-${itemId}`);
+                    
+                    if (data.item_qty <= 0 || action === 'remove') {
+                        if (itemRow) {
+                            itemRow.style.opacity = '0';
+                            setTimeout(() => {
+                                itemRow.remove();
+                                if (data.total_qty === 0) {
+                                    showEmptyMessage();
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        const qtySpan = document.getElementById(`qty-val-${itemId}`);
+                        if (qtySpan) qtySpan.innerText = data.item_qty;
+                    }
+                    
+                    const totalDisplay = document.getElementById('total-price-display');
+                    if (totalDisplay) totalDisplay.innerText = data.total_cost;
 
-                const totalDisplay = document.getElementById('total-price-display');
-                if (totalDisplay) totalDisplay.innerText = data.total_cost;
-            }
-        })
-        .catch(error => console.error('Error:', error));
+                    const badge = document.querySelector('.cart-count-badge');
+                    if (badge) badge.innerText = data.total_qty;
+                }
+            });
+        }
+
+        if (clearLink) {
+            e.preventDefault();
+            fetch(clearLink.href, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showEmptyMessage();
+                    const badge = document.querySelector('.cart-count-badge');
+                    if (badge) badge.innerText = '0';
+                }
+            });
+        }
     });
 });
 </script>
