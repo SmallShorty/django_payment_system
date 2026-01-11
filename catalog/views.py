@@ -34,7 +34,8 @@ def cart_detail(request):
             "order": order,
             "total_cost": pricing_data["total"],          
             "discount_amount": pricing_data["discount_amount"], 
-            "subtotal": pricing_data["subtotal"],        
+            "subtotal": pricing_data["subtotal"],
+            "tax_amount": str(pricing_data["tax_amount"]),    
         },
     )
 
@@ -67,6 +68,9 @@ def cart_update(request):
         "item_qty": order_item.quantity if order_item else 0,
         "total_qty": service.get_items_count(),
         "total_cost": str(pricing_data["total"]),
+        "discount_amount": str(pricing_data["discount_amount"]),
+        "tax_amount": str(pricing_data["tax_amount"]),
+        "subtotal": str(pricing_data["subtotal"]),
     })
     
 def cart_clear(request):

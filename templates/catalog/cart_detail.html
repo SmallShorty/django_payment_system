@@ -52,14 +52,14 @@
   <aside class="cart-checkout-sidebar" {% if not order.orderitem_set.exists %}style="display: none;"{% endif %}>
     <h3>Детали заказа</h3>
     
-    <div class="promo-code-section" style="margin-bottom: 20px;">
+    <div class="promo-code-section">
         <label for="promo-input">Промокод:</label>
-        <div style="display: flex; gap: 5px;">
+        <div class="promo-input-group">
             <input type="text" id="promo-input" placeholder="Введите код" class="promo-input" 
                    value="{{ order.discount.code|default:'' }}">
-            <button id="apply-promo-btn" class="btn-qty">Применить</button>
+            <button id="apply-promo-btn">Применить</button>
         </div>
-        <small id="promo-message" style="display: block; margin-top: 5px;"></small>
+        <small id="promo-message"></small>
     </div>
 
     <div class="currency-selection" id="currency-area">
@@ -67,12 +67,23 @@
         <select id="currency-select" class="currency-dropdown"></select>
     </div>
     
-    <p class="discount-row" id="discount-area" {% if not order.discount %}style="display:none;"{% endif %}>
-        Скидка: <span id="discount-amount-display">0</span>
-    </p>
+    <div id="price-details">
+        <p>Сумма: <span id="subtotal-display">{{ subtotal|default:"0" }}</span></p>
+        
+        <p class="discount-row" id="discount-area" {% if not order.discount %}style="display:none;"{% endif %}>
+            Скидка: <span id="discount-amount-display">{{ discount_amount|default:"0" }}</span>
+        </p>
 
-    <p class="total-row">Итого: <span id="total-price-display">{{ total_cost|default:"0" }}</span></p>
-    <a href="{% url 'checkout' order.id %}" class="btn-buy" id="checkout-button">Оплатить заказ</a>
+        <p id="tax-area">
+            Налоги: <span id="tax-amount-display">{{ tax_amount|default:"0" }}</span>
+        </p>
+        
+        <div class="total-row">
+            Итого: <span id="total-price-display">{{ total_cost|default:"0" }}</span>
+        </div>
+    </div>
+
+     <a href="{% url 'checkout' order.id %}" class="btn-buy" id="checkout-button">Оплатить заказ</a>
     </aside>
 </div>
 {% endblock %}
@@ -129,6 +140,27 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sidebar) sidebar.style.display = 'none';
     }
 
+    function updateSidebarUI(data) {
+        if (!data.success) return;
+
+        const elements = {
+            'total-price-display': data.total || data.total_cost,
+            'discount-amount-display': data.discount_amount,
+            'tax-amount-display': data.tax_amount,
+            'subtotal-display': data.subtotal
+        };
+
+        for (let id in elements) {
+            const el = document.getElementById(id);
+            if (el && elements[id] !== undefined) el.innerText = elements[id];
+        }
+
+        const discountArea = document.getElementById('discount-area');
+        if (discountArea) {
+            discountArea.style.display = parseFloat(data.discount_amount) > 0 ? 'block' : 'none';
+        }
+    }
+
     currencySelect.addEventListener('change', function() {
         const selectedCurrency = this.value.toUpperCase();
 
@@ -146,6 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (totalDisplay) {
                     totalDisplay.innerText = data.total_cost;
                 }
+                updateSidebarUI(data);
                 updateCheckoutUrl(selectedCurrency.toLowerCase());
             } else {
                 console.error("Ошибка при пересчете:", data.message);
@@ -170,18 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                promoMessage.style.color = 'green';
-                promoMessage.innerText = 'Промокод применен!';
-                
-                // Обновляем итоговые цифры
-                document.getElementById('total-price-display').innerText = data.total;
-                
-                const discountArea = document.getElementById('discount-area');
-                const discountDisplay = document.getElementById('discount-amount-display');
-                if (data.discount_amount > 0) {
-                    discountArea.style.display = 'block';
-                    discountDisplay.innerText = data.discount_amount;
-                }
+                updateSidebarUI(data)
             } else {
                 promoMessage.style.color = 'red';
                 promoMessage.innerText = data.message || 'Неверный код';
@@ -234,8 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const totalDisplay = document.getElementById('total-price-display');
                     if (totalDisplay) totalDisplay.innerText = data.total_cost;
 
-                    const badge = document.querySelector('.cart-count-badge');
-                    if (badge) badge.innerText = data.total_qty;
+                    updateSidebarUI(data)
                 }
             });
         }
