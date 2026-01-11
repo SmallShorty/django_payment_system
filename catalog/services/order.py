@@ -1,4 +1,4 @@
-from catalog.models.order import Order, OrderItem
+from catalog.models.order import Order
 from catalog.models import Item
 from payments.services.pricing import PricingService
 
@@ -59,6 +59,8 @@ class OrderService:
         return False
 
     def clear_order(self):
+        self.order.orderitem_set.all().delete()
+        
         self.session.pop("order_id", None)
         self.session.modified = True
     

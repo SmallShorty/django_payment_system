@@ -42,6 +42,7 @@
 
     {% else %}
     <div id="empty-cart-message">
+    
       <p>В корзине пока ничего нет.</p>
       <a href="{% url 'catalog_shop' %}" id="back-btn">Вернуться в магазин</a>
     </div>
@@ -121,7 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showEmptyMessage() {
         itemsSection.innerHTML = `
-            <h1>Ваша корзина</h1>
             <div id="empty-cart-message">
                 <p>В корзине пока ничего нет.</p>
                 <a href="{% url 'catalog_shop' %}" id="back-btn">Вернуться в магазин</a>

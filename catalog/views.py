@@ -72,7 +72,10 @@ def cart_update(request):
 def cart_clear(request):
     order_service = OrderService(request)
     order_service.clear_order()
-    return redirect("cart_detail")
+    
+    return JsonResponse({
+        "success": True,
+    })
 
 
 def shop_view(request):
