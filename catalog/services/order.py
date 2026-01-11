@@ -37,6 +37,19 @@ class OrderService:
     def add_item(self, item_id, quantity=1):
         item = Item.objects.get(id=item_id)
         return self.order.add_or_update_item(item, quantity)
+    
+    def reduce_item(self, item_id):
+        oi = self.order.orderitem_set.filter(item_id=item_id).first()
+        if not oi:
+            return None
+        
+        if oi.quantity > 1:
+            return self.add_item(item_id, quantity=-1)
+        else:
+            return self.remove_item(item_id)
+
+    def remove_item(self, item_id):
+        return self.order.orderitem_set.filter(item_id=item_id).delete()
 
     def mark_as_paid(self):
         if not self.order.is_paid:
@@ -51,3 +64,5 @@ class OrderService:
     
     def get_items_count(self):
         return self.order.total_items
+    
+

@@ -40,6 +40,8 @@ class Order(models.Model):
     def set_paid(self):
         self.is_paid = True
         self.save()
+        
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)

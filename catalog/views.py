@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from catalog.models.item import Item
@@ -38,33 +39,36 @@ def cart_detail(request):
     )
 
 
-def cart_update(request, item_id, action):
-    order_service = OrderService(request)
-    order = order_service.order
+def cart_update(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        action = data.get('action')
+        currency = data.get('currency', 'rub').lower()
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"success": False}, status=400)
+
+    service = OrderService(request)
 
     if action == "add":
-        order_service.add_item(item_id, quantity=1)
+        service.add_item(item_id)
     elif action == "reduce":
-        oi = order.orderitem_set.filter(item_id=item_id).first()
-        if oi:
-            order_service.update_quantity(item_id, oi.quantity - 1)
+        service.reduce_item(item_id)
+    elif action == "remove":
+        service.remove_item(item_id)
 
-    order_item = order.orderitem_set.filter(item_id=item_id).first()
+    pricing_service = PricingService(service.order)
+    pricing_data = pricing_service.get_total_price(target_currency=currency)
     
-    pricing_service = PricingService(order)
-    pricing_data = pricing_service.get_total_price()
+    order_item = service.order.orderitem_set.filter(item_id=item_id).first()
+
+    return JsonResponse({
+        "success": True,
+        "item_qty": order_item.quantity if order_item else 0,
+        "total_qty": service.get_items_count(),
+        "total_cost": str(pricing_data["total"]),
+    })
     
-
-    return JsonResponse(
-        {
-            "success": True,
-            "item_qty": order_item.quantity if order_item else 0,
-            "total_qty": order_service.get_items_count(),
-            "total_cost": str(pricing_data["total"]),
-        }
-    )
-
-
 def cart_clear(request):
     order_service = OrderService(request)
     order_service.clear_order()

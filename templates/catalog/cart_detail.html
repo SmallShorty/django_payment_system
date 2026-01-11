@@ -198,13 +198,20 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const itemId = btn.dataset.itemId;
             const action = btn.dataset.action;
+            const currentCurrency = currencySelect ? currencySelect.value : 'rub';
 
-            fetch(`/catalog/cart/update/${itemId}/${action}/`, {
+            fetch(`/catalog/cart/update/`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}',
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    action: action,
+                    currency: currentCurrency
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -223,8 +230,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         const qtySpan = document.getElementById(`qty-val-${itemId}`);
                         if (qtySpan) qtySpan.innerText = data.item_qty;
                     }
+
                     const totalDisplay = document.getElementById('total-price-display');
                     if (totalDisplay) totalDisplay.innerText = data.total_cost;
+
                     const badge = document.querySelector('.cart-count-badge');
                     if (badge) badge.innerText = data.total_qty;
                 }
@@ -244,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-
     updateCurrencyOptions();
 });
 </script>
