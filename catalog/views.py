@@ -6,11 +6,9 @@ from catalog.models.order import Order
 from catalog.services.order import OrderService
 from payments.services.pricing import PricingService
 
-
 def item_detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
     return render(request, "catalog/item_detail.html", {"item": item})
-
 
 def add_to_cart(request, item_id):
     if request.method == "POST":
@@ -19,7 +17,6 @@ def add_to_cart(request, item_id):
 
     return redirect("item_detail", pk=item_id)
 
-
 def cart_detail(request):
     order_service = OrderService(request)
     order = order_service.order
@@ -27,8 +24,16 @@ def cart_detail(request):
     available_currencies = order.get_currencies()
     init_currency = available_currencies[0] if available_currencies else "RUB"
     
-    pricing_service = PricingService(order)
-    pricing_data = pricing_service.get_total_price(target_currency=init_currency)
+    try:
+        pricing_service = PricingService(order)
+        pricing_data = pricing_service.get_total_price(target_currency=init_currency)
+    except Exception:
+        pricing_data = {
+            "total": 0,
+            "discount_amount": 0,
+            "subtotal": 0,
+            "tax_amount": 0
+        }
     
     return render(
         request,
@@ -41,7 +46,6 @@ def cart_detail(request):
             "tax_amount": str(pricing_data["tax_amount"]),    
         },
     )
-
 
 def cart_update(request):
     try:
@@ -61,8 +65,16 @@ def cart_update(request):
     elif action == "remove":
         service.remove_item(item_id)
 
-    pricing_service = PricingService(service.order)
-    pricing_data = pricing_service.get_total_price(target_currency=currency)
+    try:
+        pricing_service = PricingService(service.order)
+        pricing_data = pricing_service.get_total_price(target_currency=currency)
+    except Exception:
+        pricing_data = {
+            "total": 0,
+            "discount_amount": 0,
+            "subtotal": 0,
+            "tax_amount": 0
+        }
     
     order_item = service.order.orderitem_set.filter(item_id=item_id).first()
 
@@ -84,7 +96,6 @@ def cart_clear(request):
         "success": True,
     })
 
-
 def shop_view(request):
     items = Item.objects.all()
     return render(request, 'catalog/product_list.html', {'items': items})
@@ -94,10 +105,12 @@ def get_cart_total(request, order_id, currency):
         target_currency = currency.upper()
         order = get_object_or_404(Order, id=order_id)
         
-        service = PricingService(order)
-        pricing_data = service.get_total_price(target_currency=target_currency) 
-        
-        final_total = pricing_data.get('total', 0)
+        try:
+            service = PricingService(order)
+            pricing_data = service.get_total_price(target_currency=target_currency) 
+            final_total = pricing_data.get('total', 0)
+        except Exception:
+            final_total = 0
         
         return JsonResponse({
             'success': True,
