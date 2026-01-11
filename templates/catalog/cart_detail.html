@@ -50,13 +50,29 @@
 
   <aside class="cart-checkout-sidebar" {% if not order.orderitem_set.exists %}style="display: none;"{% endif %}>
     <h3>Детали заказа</h3>
+    
+    <div class="promo-code-section" style="margin-bottom: 20px;">
+        <label for="promo-input">Промокод:</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="promo-input" placeholder="Введите код" class="promo-input" 
+                   value="{{ order.discount.code|default:'' }}">
+            <button id="apply-promo-btn" class="btn-qty">Применить</button>
+        </div>
+        <small id="promo-message" style="display: block; margin-top: 5px;"></small>
+    </div>
+
     <div class="currency-selection" id="currency-area">
         <label for="currency-select">Валюта оплаты:</label>
         <select id="currency-select" class="currency-dropdown"></select>
     </div>
+    
+    <p class="discount-row" id="discount-area" {% if not order.discount %}style="display:none;"{% endif %}>
+        Скидка: <span id="discount-amount-display">0</span>
+    </p>
+
     <p class="total-row">Итого: <span id="total-price-display">{{ total_cost|default:"0" }}</span></p>
     <a href="{% url 'checkout' order.id %}" class="btn-buy" id="checkout-button">Оплатить заказ</a>
-  </aside>
+    </aside>
 </div>
 {% endblock %}
 
@@ -68,6 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.querySelector('.cart-checkout-sidebar');
     const currencySelect = document.getElementById('currency-select');
     const checkoutButton = document.getElementById('checkout-button');
+    const applyPromoBtn = document.getElementById('apply-promo-btn');
+    const promoInput = document.getElementById('promo-input');
+    const promoMessage = document.getElementById('promo-message');
 
     function updateCurrencyOptions() {
         if (!itemsWrapper || !currencySelect) return;
@@ -133,6 +152,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(err => console.error("Ошибка сети:", err));
+    });
+
+    applyPromoBtn.addEventListener('click', function() {
+        const code = promoInput.value.trim();
+        if (!code) return;
+
+        fetch(`/pricing/apply_promo/{{ order.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ code: code, currency: currencySelect.value })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                promoMessage.style.color = 'green';
+                promoMessage.innerText = 'Промокод применен!';
+                
+                // Обновляем итоговые цифры
+                document.getElementById('total-price-display').innerText = data.total;
+                
+                const discountArea = document.getElementById('discount-area');
+                const discountDisplay = document.getElementById('discount-amount-display');
+                if (data.discount_amount > 0) {
+                    discountArea.style.display = 'block';
+                    discountDisplay.innerText = data.discount_amount;
+                }
+            } else {
+                promoMessage.style.color = 'red';
+                promoMessage.innerText = data.message || 'Неверный код';
+            }
+        })
+        .catch(err => console.error("Ошибка:", err));
     });
 
     itemsSection.addEventListener('click', function(e) {

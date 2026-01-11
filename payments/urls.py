@@ -12,4 +12,5 @@ urlpatterns = [
     ),
     path('payment-complete/', views.payment_complete, name='payment_complete'),
     path('confirm-status/', views.confirm_payment_status, name='confirm_status'),
+    path('apply_promo/<int:order_id>/', views.apply_promo, name='apply_promo'),
 ]
