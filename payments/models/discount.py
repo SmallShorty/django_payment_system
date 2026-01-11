@@ -13,7 +13,7 @@ class Discount(models.Model):
         blank=True
     )
     percent_off = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    stripe_coupon_id = models.CharField(null=True, blank=True)
+    stripe_coupon_id = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.code
