@@ -24,8 +24,11 @@ def cart_detail(request):
     order_service = OrderService(request)
     order = order_service.order
     
+    available_currencies = order.get_currencies()
+    init_currency = available_currencies[0] if available_currencies else "RUB"
+    
     pricing_service = PricingService(order)
-    pricing_data = pricing_service.get_total_price(target_currency="RUB")
+    pricing_data = pricing_service.get_total_price(target_currency=init_currency)
     
     return render(
         request,

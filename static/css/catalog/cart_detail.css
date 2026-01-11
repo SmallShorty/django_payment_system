@@ -125,13 +125,7 @@
     color: #555;
 }
 
-#discount-area {
-    color: #27ae60;
-    font-weight: 500;
-}
-
-#tax-area {
-    color: #7f8c8d;
+#subtotal-display, #discount-area, #tax-area {
     font-style: italic;
     font-size: 0.9rem;
 }
