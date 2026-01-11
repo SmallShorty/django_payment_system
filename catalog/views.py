@@ -21,11 +21,19 @@ def add_to_cart(request, item_id):
 
 def cart_detail(request):
     order_service = OrderService(request)
+    order = order_service.order
+    
+    pricing_service = PricingService(order)
+    pricing_data = pricing_service.get_total_price(target_currency="RUB")
+    
     return render(
         request,
         "catalog/cart_detail.html",
         {
-            "order": order_service.order,
+            "order": order,
+            "total_cost": pricing_data["total"],          
+            "discount_amount": pricing_data["discount_amount"], 
+            "subtotal": pricing_data["subtotal"],        
         },
     )
 
