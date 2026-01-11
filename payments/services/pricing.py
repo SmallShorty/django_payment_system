@@ -98,6 +98,18 @@ class PricingService:
             return True
         return False
 
-    def set_taxes(self, tax_ids_list):
+    def set_taxes(self, tax_ids_list=[]):
+        """
+        Устанавливает налоги для заказа. 
+        
+        Здесь может быть реализована различная логика в зависимости от заказа:
+        - Проверка региона пользователя (tax nexus).
+        - Применение налогов в зависимости от категории товаров (например, электроника vs продукты).
+        - Налоги на основе общей суммы или типа плательщика (B2B/B2C).
+        """
+        vat_tax = Tax.objects.filter(name__icontains="VAT").first()
+        if vat_tax:
+            tax_ids_list.append(vat_tax.id)
+                
         taxes = Tax.objects.filter(id__in=tax_ids_list)
         self.order.taxes.set(taxes)

@@ -1,5 +1,6 @@
 from catalog.models.order import Order, OrderItem
 from catalog.models import Item
+from payments.services.pricing import PricingService
 
 class OrderService:
     def __init__(self, request):
@@ -27,6 +28,9 @@ class OrderService:
             order = Order.objects.create(session_key=session_key)
             self.session["order_id"] = order.id
             self.session.modified = True
+            
+        pricing = PricingService(order)
+        pricing.set_taxes()
 
         return order
 
